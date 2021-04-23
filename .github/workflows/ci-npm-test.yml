@@ -1,0 +1,77 @@
+name: CI-NPM-TEST
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  # push:
+  #   branches: [ main ]
+
+  #Trigger only on PR open with target main
+  pull_request:
+    types: [ opened ]
+    branches: [ main ]
+  
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "ci"
+  ci-npm-test:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Use Node.js v14
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14.16.0'
+          #node-version: '14'
+          
+        
+
+      # Runs a single command using the runners shell
+      - name: Run a one-line script
+        run: echo Hello DEVS - Starting CI task!
+
+        
+      #Setup Use yarn cache
+      #- uses: c-hive/gha-yarn-cache@v1
+        
+      # Install node modules dependencies
+      # - name: Install node modules dependencies
+      #   run: yarn install
+        
+      # - name: Run ESLint
+      #   run: yarn eslint
+
+      # # # Run test  
+      # - name: Test
+      #   run: yarn test
+
+
+      #Cache node modules below
+      - name: Cache Node.js modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-node- 
+            ${{ runner.OS }}- 
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npx eslint src/
+        
+      - run: npm run build --if-present
+      - run: npm test
+    

@@ -1,0 +1,90 @@
+name: CI-IOS
+
+on:
+
+  #Used to trigger the job manually from github.com
+  workflow_dispatch:
+
+  #Used to trigger during PR
+  # pull_request:
+  #   branches: [ beta ]
+  #   types: [closed]
+
+jobs:
+  CI-IOS:
+    #runs-on: [self-hosted, macos]
+    runs-on: macos-latest
+    if: github.event.pull_request.merged || github.event_name == 'workflow_dispatch'
+    name: IOS Clean - Build - Test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Use Node.js v14
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14.16.0'
+          #node-version: '14'
+
+      # npm cache files are stored in `~/.npm` on Linux/macOS
+
+      #------ Using npm instead of yarn below and Cache node modules ------
+      - name: Cache Node.js modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-node- 
+            ${{ runner.OS }}- 
+
+      - name: Install NPM dependencies
+        run: npm install
+      
+      - name: Caching cocoa pods
+        uses: actions/cache@v2
+        with:
+          path: ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      #Install Pods
+      - name: Install pods
+        run: cd ios && pod install
+
+      - name: Running a build ios and test as CI job
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APP_APPLE_ID: ${{ secrets.APP_APPLE_ID }}
+          CI_KEYCHAIN_PASSWORD: ${{ secrets.CI_KEYCHAIN_PASSWORD }}
+          FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
+          FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
+          MATCH_GIT_BASIC_AUTH_BASE64: ${{ secrets.MATCH_GIT_BASIC_AUTH_BASE64 }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        run: fastlane ios ios_ci_tests
+        
+      - name: Upload IPA
+        uses: actions/upload-artifact@v1
+        with:
+          name: myReactNativeCICCApp.ipa
+          path: fastlane/builds/ 
+      
+      #------ Prepare fastlane scripts from here ---------------
+      # - uses: actions/setup-ruby@v1
+      #   with:
+      #     ruby-version: '2.6'
+
+      # - name: Install bundler part1
+      #   run: gem install bundler
+      
+      # - name: Install bundle
+      #   run: |
+      #     bundle update --bundler
+      #     bundle config path vendor/bundle
+      #     bundle install --jobs 4 --retry 3
+
+
+          # Workflow completed text shell
+      - name: Run a one-line script echo label as completed
+        run: echo IOS CI JOB completed

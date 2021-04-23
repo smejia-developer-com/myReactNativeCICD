@@ -1,0 +1,112 @@
+name: BETA-ANDROID-CD-PLAYSTORE
+
+on:
+
+  #Used to trigger the job manually from github.com
+  workflow_dispatch:
+
+  #Used to trigger during PR
+  # pull_request:
+  #   branches: [ beta ]
+  #   types: [closed]
+jobs:
+  BETA-ANDROID-CD-PLAYSTORE:
+    #Only trigger the job with the PR is closed and merged
+    #if: ${{ github.event_name =='workflow_dispatch' || github.event.pull_request.merged == true }}
+    #if: github.event_name =='workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true)
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged || github.event_name == 'workflow_dispatch'
+    name: Beta CD Distribution
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Use Node.js v14
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14.16.0'
+          #node-version: '14'
+      # - uses: c-hive/gha-yarn-cache@v1
+  
+      # If we want to use yarn we should uncomment the code below
+      
+      # - name: Install node modules
+      #   run: |
+      #     yarn install
+      
+      # - name: Run ESLint
+      #   run: yarn eslint
+      
+      # - name: Run test
+      #   run: |
+      #     yarn test
+
+      # npm cache files are stored in `~/.npm` on Linux/macOS
+
+      #------ Using npm instead of yarn below and Cache node modules ------
+      - name: Cache Node.js modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-node- 
+            ${{ runner.OS }}- 
+
+      - name: Install NPM dependencies
+        run: npm install
+        
+      - run: npm run build --if-present
+      - run: npm test
+
+      #------------Cache gradle wrapper and dependencies below ----------------
+      - name: Cache Gradle Wrapper
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
+
+      - name: Cache Gradle Dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-caches-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-caches-
+
+      # - name: Make Gradlew Executable
+      #   run: cd android && chmod +x ./gradlew
+
+      # - name: Build Android Release
+      #   run: |
+      #     cd android && ./gradlew assembleRelease --no-daemon
+      
+      # - name: Upload Artifact
+      #   uses: actions/upload-artifact@v1
+      #   with:
+      #     name: app-release.apk
+      #     path: android/app/build/outputs/apk/release/
+
+      #------ Prepare fastlane scripts from here ---------------
+      - uses: actions/setup-ruby@v1
+        with:
+          ruby-version: '2.6'
+
+      - name: Install bundler part1
+        run: gem install bundler
+      
+      - name: Install bundle
+        run: |
+          bundle update --bundler
+          bundle config path vendor/bundle
+          bundle install --jobs 4 --retry 3
+
+      # Distribute app via firebase App Distrib playstore
+      - name: Distribute app via Google playstore
+        env:
+          GCP_DISTRIB_KEY: ${{ secrets.GCP_DISTRIBUTE_KEY }}
+        run: bundle exec fastlane android deploy_playstore
+    
+      # Workflow completed text shell
+      - name: Run a one-line script echo label as completed
+        run: echo App distributed to google playstore completed

@@ -1,0 +1,324 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Some IOS parameters
+PROJECT_NAME = "myReactNativeCICCApp"
+XCODE_PROJECT = "./ios/#{PROJECT_NAME}.xcodeproj"
+XCODE_WORKSPACE = "./ios/#{PROJECT_NAME}.xcworkspace"
+OUTPUT_DIRECTORY = "./fastlane/builds"
+IPA_DIRECTORY = "#{OUTPUT_DIRECTORY}/#{PROJECT_NAME}.ipa"
+TESTERS_FILE = "./fastlane/testers.txt"
+BUILD_FOR_DEVELOPMENT_ONLY = false # true = Build for Development | false = Build to create a release
+BUILD_ONLY = true
+
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+
+
+
+default_platform(:android)
+
+# ------------------------- IOS SECTION BELOW -----------------------------
+#IOS CICD jobs via fastlane
+platform :ios do
+
+    #Build only IOS app
+    desc "Clean and Build IOS only"
+    lane :build_only_ios do
+        echo(message:"Building IOS app....")
+        configuration_name = "Release"
+        export_options_method = "development"
+        code_sign_identity = "iPhone Developer"
+        MY_APP_ID = ENV["APP_IDENTIFIER"]
+        MY_PROFILE = "match Development #{ENV["APP_IDENTIFIER"]}"
+        MY_TEAM = ENV["DEVELOPER_TEAM_ID"]
+
+        increment_build_number(xcodeproj: XCODE_PROJECT)
+        
+        # bump_type: "patch","minor","major"
+        increment_version_number(
+            bump_type: "patch",
+            xcodeproj: XCODE_PROJECT,
+        )
+
+        settings_to_override = {
+            :BUNDLE_IDENTIFIER => MY_APP_ID,
+            :PROVISIONING_PROFILE_SPECIFIER => MY_PROFILE,
+            :DEVELOPMENT_TEAM => MY_TEAM,
+        }
+
+        gym(
+            scheme: PROJECT_NAME,
+            workspace: XCODE_WORKSPACE,
+            silent: true,
+            clean:true,
+            configuration: configuration_name,
+            xcargs: `#{settings_to_override} -UseNewBuildSystem=YES`,
+            output_directory: OUTPUT_DIRECTORY,
+            output_name: "#{PROJECT_NAME}.ipa",
+            export_options: {
+                method: "development",
+                signingStyle: "manual",
+                provisioningProfiles: { 
+                    MY_APP_ID => MY_PROFILE
+                }
+            }
+        )
+
+        #crashlytics
+        echo(message:"IOS app gym done....")
+    end
+
+    private_lane :cicd_ios_build do
+        
+        MATCH_TYPE = "appstore"
+        #Uncomment the line below if we want to select a development build
+        #MATCH_TYPE = "development"
+
+       
+        MY_APP_ID = ENV["APP_IDENTIFIER"]
+        MY_TEAM = ENV["DEVELOPER_TEAM_ID"]
+        
+        ##configuration_name = "Release"
+        if MATCH_TYPE == "appstore"
+            echo(message:"sms appstore config detected ... ")
+            MATCH_TYPE = "appstore"
+            export_options_method = "app-store"
+            configuration_name = "Release" #config_release
+            MY_PROFILE = "match AppStore #{ENV["APP_IDENTIFIER"]}"
+            code_sign_identity = "Apple Distribution: MyTeamNameHere (F111111)" #TODO Update this with real apple team values
+        else
+            echo(message:"My SMS development config detected ... ")
+            MATCH_TYPE = "development"
+            export_options_method = "development"
+            configuration_name = "Debug" #config_debug
+            MY_PROFILE = "match Development #{ENV["APP_IDENTIFIER"]}"
+            code_sign_identity = "Apple Development: MyTeamNameHere (W222222)" #TODO Update this with real apple team values
+        end
+
+        #Checking decrypt pas
+        echo(message:"decryp pas string here was ... ")
+
+
+        #increment our build number
+        increment_build_number(xcodeproj: XCODE_PROJECT)
+        
+        # increment our ios version number + 1 
+        #bump_type: "patch","minor","major"
+        increment_version_number(
+            bump_type: "patch",
+            xcodeproj: XCODE_PROJECT,
+        )
+  
+        settings_to_override = {
+            :BUNDLE_IDENTIFIER => MY_APP_ID,
+            :PROVISIONING_PROFILE_SPECIFIER => MY_PROFILE,
+            :DEVELOPMENT_TEAM => MY_TEAM,
+        }
+  
+        create_keychain(
+            name: ENV["CI_KEYCHAIN_NAME"],
+            password: ENV["CI_KEYCHAIN_PASSWORD"],
+            default_keychain: false,
+            unlock: true,
+            timeout: 3600,
+            lock_when_sleeps: false,
+            require_create:false
+        )
+
+        echo(message:"Match section starting... ")
+
+        match(
+            app_identifier: ENV["APP_IDENTIFIER"],
+            type: MATCH_TYPE,
+            username: ENV["APPLE_ID"],
+            team_id: ENV["DEVELOPER_TEAM_ID"],
+            keychain_name: ENV["CI_KEYCHAIN_NAME"],
+            keychain_password: ENV["CI_KEYCHAIN_PASSWORD"],
+            readonly: true,
+            git_basic_authorization:ENV["MATCH_GIT_BASIC_AUTH_BASE64"]
+        )
+  
+        update_code_signing_settings(
+            use_automatic_signing: false,
+            path: XCODE_PROJECT,
+            code_sign_identity: code_sign_identity,
+            bundle_identifier: MY_APP_ID,
+            profile_name: MY_PROFILE
+        )
+  
+        gym(
+            scheme: PROJECT_NAME,
+            workspace: XCODE_WORKSPACE,
+            silent: true,
+            configuration: configuration_name,
+            xcargs: `#{settings_to_override} -UseNewBuildSystem=YES`,
+            output_directory: OUTPUT_DIRECTORY,
+            output_name: "#{PROJECT_NAME}.ipa",
+            export_options: {
+                method: export_options_method,
+                signingStyle: "manual",
+                provisioningProfiles: { 
+                    MY_APP_ID => MY_PROFILE
+                }
+            }
+        )      
+  
+    end
+    
+    desc "Create Signed IPA Build"
+    lane :ios_build_with_match do
+        cicd_ios_build
+    end
+
+    desc "Beta deploy to testflight "
+    lane :ios_beta_tesflight do
+        #Sign build on CI
+        cicd_ios_build
+
+        upload_to_testflight(
+            username: ENV["APPLE_ID"],
+            app_identifier: ENV["APP_IDENTIFIER"],
+            team_id: ENV["APP_STORE_TEAM_ID"],
+            ipa: IPA_DIRECTORY,
+            skip_waiting_for_build_processing: true,
+            apple_id: ENV["APP_APPLE_ID"]
+        )
+    end
+
+    desc "Upload binary to testflight without build"
+    lane :ios_tesflight_without_build do
+        upload_to_testflight(
+            username: ENV["APPLE_ID"],
+            app_identifier: ENV["APP_IDENTIFIER"],
+            team_id: ENV["APP_STORE_TEAM_ID"],
+            ipa: "./fastlane/fakeapp/myReactNativeCICCApp.ipa",
+            skip_waiting_for_build_processing: true,
+            apple_id: ENV["APP_APPLE_ID"]
+        )
+    end
+
+    #run build and test on ios
+    lane :ios_ci_tests do
+        #optional -Sign build on CI if needed as run_test alredy make build
+        #cicd_ios_build
+
+        #Run IOS tests
+        #run_tests(scheme: PROJECT_NAME, workspace: XCODE_WORKSPACE, test_without_building: true)
+        run_tests(scheme: PROJECT_NAME, workspace: XCODE_WORKSPACE)
+    end
+end
+
+
+# -------------- ANDROID SECTIONS -------------
+platform :android do
+
+    desc "Runs all the tests"
+    lane :run_test_only do
+        gradle(task: "test", project_dir: './android/')
+    end
+
+    desc "Android build as debug"
+    lane :build_as_debug do
+        # increment_version_code(app_project_dir: './android/app')
+        gradle(task: 'clean', project_dir: './android/')
+        gradle(task: 'bundle', build_type: 'Debug', project_dir: './android')
+    end
+
+    desc "Android build as release"
+    lane :build_as_release do
+        # increment_version_code(app_project_dir: './android/app')
+        gradle(task: 'clean', project_dir: './android/')
+        gradle(task: 'bundle', build_type: 'Release', project_dir: './android')
+    end
+
+    desc "Android build and release to beta via firebase"
+    lane :firebase_deploy do
+   
+        #Increment the android version after getting the max version published on playstore + 1
+        g = google_play_track_version_codes
+        gb = google_play_track_version_codes(track: 'beta')
+        ga = google_play_track_version_codes(track: 'internal')
+        max_value = [g.first.to_i, gb.first.to_i, ga.first.to_i].max
+        echo(message:"Last Android version detected on prod beta and internal is ")
+        echo(message:max_value.to_s)
+        echo(message:"New version to be deployed is ")
+        version_updated = max_value + 1
+        echo(message:version_updated.to_s)
+        increment_version_code(gradle_file_path: "./android/app/build.gradle", version_code: version_updated.to_i)
+
+        #Clean and build the App
+        gradle(task: 'clean', project_dir: './android/')
+        gradle(task: 'assembleDebug', project_dir: './android')
+
+        #Distribute the app to firebase
+        echo(message:"Getting firebase env secret values...")
+        firebase_app_distribution(
+            service_credentials_file: "./android/gcp_distribute_key.json",
+            app: ENV["FIREBASE_APP_ID"],
+            apk_path: "./android/app/build/outputs/apk/debug/app-debug.apk",
+            groups: "my-testers-group",
+            release_notes: "Automated Release to firebase CICD app release"
+        )
+    end 
+
+    desc "Submit a new Beta Build to Crashlytics Beta"
+    lane :beta_crashlytic do
+        gradle(task: "clean", project_dir: './android/')
+        gradle(task: "assembleRelease", project_dir: './android/')
+        crashlytics
+        # sh "your_script.sh"
+        # You can also use other beta testing services here
+    end
+
+
+
+    desc "Deploy a new version to Google PlayStore"
+    lane :deploy_playstore do
+
+        #Increment the android version after getting the max version published on playstore + 1
+        g = google_play_track_version_codes
+        gb = google_play_track_version_codes(track: 'beta')
+        ga = google_play_track_version_codes(track: 'internal')
+        max_value = [g.first.to_i, gb.first.to_i, ga.first.to_i].max
+        echo(message:"Last Android version detected on prod beta and internal is ")
+        echo(message:max_value.to_s)
+        echo(message:"New version to be deployed is ")
+        version_updated = max_value + 1
+        echo(message:version_updated.to_s)
+        increment_version_code(gradle_file_path: "./android/app/build.gradle", version_code: version_updated.to_i) 
+        
+        #Clean and build the App       
+        gradle(task: "clean", project_dir: './android/')
+        gradle(task: 'bundle', build_type: 'Release', project_dir: './android')
+        
+        #Generate a new dynamic version name and Upload to playstore directly
+        #gnames = google_play_track_release_names #Remove this after a first production build
+        ginternalNames = google_play_track_release_names(track: 'internal')
+        echo(message:"MostRecent Internal names")
+        echo(message:ginternalNames.first)
+        gLastVersionName = ginternalNames.first.split("-")
+        echo(message:"New dynamic app version name is ")
+        version_name_updated = gLastVersionName.first + '-' + version_updated.to_s
+        echo(message:version_name_updated)
+        upload_to_play_store(
+            track: 'internal',
+            aab: './android/app/build/outputs/bundle/release/app-release.aab',  
+            release_status: 'draft',
+            version_name: version_name_updated
+        )
+    end
+
+
+  end

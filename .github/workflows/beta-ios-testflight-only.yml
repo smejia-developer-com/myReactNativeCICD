@@ -1,0 +1,74 @@
+name: BETA-IOS-TESTFLIGHT-ONLY
+
+on:
+
+  #Used to trigger the job manually from github.com
+  workflow_dispatch:
+
+  #Used to trigger during PR
+  # pull_request:
+  #   branches: [ beta ]
+  #   types: [closed]
+
+jobs:
+  BETA-IOS-TESTFLIGHT-ONLY:
+    #Only trigger the job with the PR is closed and merged
+    #if: ${{ github.event_name =='workflow_dispatch' || github.event.pull_request.merged == true }}
+    #if: github.event_name =='workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true)
+    
+    #runs-on: [self-hosted, macos]
+    runs-on: macos-latest
+    name: IOS upload to testflight using old ipa
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Use Node.js v14
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14.16.0'
+          #node-version: '14'
+
+      #------ Using npm instead of yarn below and Cache node modules ------
+      - name: Cache Node.js modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-node- 
+            ${{ runner.OS }}- 
+
+      - name: Install NPM dependencies
+        run: npm install
+      
+      - name: Caching cocoa pods
+        uses: actions/cache@v2
+        with:
+          path: ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+
+      - name: Create IPA Build via and run unit test as IOS CI job
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APP_APPLE_ID: ${{ secrets.APP_APPLE_ID }}
+          CI_KEYCHAIN_PASSWORD: ${{ secrets.CI_KEYCHAIN_PASSWORD }}
+          FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
+          FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
+          MATCH_GIT_BASIC_AUTH_BASE64: ${{ secrets.MATCH_GIT_BASIC_AUTH_BASE64 }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        run: fastlane ios ios_tesflight_without_build
+        
+      - name: Upload IPA
+        uses: actions/upload-artifact@v1
+        with:
+          name: myReactNativeCICCApp.ipa
+          path: fastlane/builds/ 
+    
+
+      # Workflow completed text shell
+      - name: Run a one-line script echo label as completed
+        run: echo Upload to testflight only job completed
