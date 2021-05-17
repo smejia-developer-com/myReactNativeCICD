@@ -80,10 +80,11 @@ AND FINALLY WE SHOULD CONFIGURE, GENERATE OUR KEYSTORE AND APPLE APP INFO Before
 
 Very useful Android CICD tutorial to configure any extra details about android playstore config, keystore steps and GCP key.json key to connect to playstore and more:
 
-https://www.raywenderlich.com/10187451-fastlane-tutorial-for-android-getting-started
+https://www.raywenderlich.com/10187451-fastlane-tutorial-for-android-getting-started#toc-anchor-015
 
 
-Very useful IOS tutorial to configure our IOS CICD options about Apple store, itunes connect, sign and so on:
+Very useful IOS tutorial to configure our IOS CICD options about Apple store, match config , itunes connect, sign and so on:
+https://medium.com/@danielvivek2006/setup-fastlane-match-for-ios-6260758a9a4e
 
 https://www.gitstart.com/post/automatic-deployment-of-react-native-ios-apps-with-fastlane-and-github-actions
 
@@ -160,5 +161,7 @@ The documentation of fastlane can be found on [docs.fastlane.tools](https://docs
 
 
 Contributing
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app). And based on very useful tutorials about ANDROID AND IOS config details (Android): https://www.raywenderlich.com/10187451-fastlane-tutorial-for-android-getting-started and IOS: https://www.gitstart.com/post/automatic-deployment-of-react-native-ios-apps-with-fastlane-and-github-actions)
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app). And based on very useful tutorials about ANDROID AND IOS config details (Android): https://www.raywenderlich.com/10187451-fastlane-tutorial-for-android-getting-started and IOS: https://www.gitstart.com/post/automatic-deployment-of-react-native-ios-apps-with-fastlane-and-github-actions
+https://www.youtube.com/watch?v=Edr88s5YlH4, https://medium.com/@danielvivek2006/setup-fastlane-match-for-ios-6260758a9a4e
+. Thanks everyone!
 
