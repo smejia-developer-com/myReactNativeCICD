@@ -2,6 +2,8 @@
 
 Enjoy this fast and furious tutorial about how to create a starter template of react-native APP and prepare a complete CI/CD to prepare our app and distribute as signed app to (Android)Playstore or Firebase Dist and (IOS)testflight automatically via github actions.
 
+Complete tutorial on the following link:
+https://my-reactnative-cicd-tutorial-website.s3.amazonaws.com/index.html
 
 
 ## Initial Setup :
@@ -76,7 +78,14 @@ fastlane add_plugin increment_version_code
 
 AND FINALLY WE SHOULD CONFIGURE, GENERATE OUR KEYSTORE AND APPLE APP INFO Before running any CD job from fastlane or github actions.
 
-To be continue....
+Very useful Android CICD tutorial to configure any extra details about android playstore config, keystore steps and GCP key.json key to connect to playstore and more:
+
+https://www.raywenderlich.com/10187451-fastlane-tutorial-for-android-getting-started
+
+
+Very useful IOS tutorial to configure our IOS CICD options about Apple store, itunes connect, sign and so on:
+
+https://www.gitstart.com/post/automatic-deployment-of-react-native-ios-apps-with-fastlane-and-github-actions
 
 For now I can show you all the github actions available here and each fastlane related to ReactNative CICD:
 
@@ -151,4 +160,5 @@ The documentation of fastlane can be found on [docs.fastlane.tools](https://docs
 
 
 Contributing
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app). And based on very useful tutorials about ANDROID AND IOS config details (Android): https://www.raywenderlich.com/10187451-fastlane-tutorial-for-android-getting-started and IOS: https://www.gitstart.com/post/automatic-deployment-of-react-native-ios-apps-with-fastlane-and-github-actions)
+
