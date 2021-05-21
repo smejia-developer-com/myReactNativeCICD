@@ -11,7 +11,7 @@ We need to consider having installed Node , npm , xcode to run IOS apps and/or a
 
 Well, let's create our CI/CD react app:
 
-# IMPORTANT # :
+## IMPORTANT ## :
 OH YOU CAN AVOID doing the Step 1-4 just cloning this ready-to-go starterReactNativeKit repo doing a git clone https://github.com/smejia-developer-com/myReactNativeCICD as you will get a simpleReactApp + CICD files ready to be changed with your own information.
 
 
@@ -78,33 +78,53 @@ fastlane add_plugin increment_version_code
 
 AND FINALLY WE SHOULD CONFIGURE, GENERATE OUR KEYSTORE AND APPLE APP INFO Before running any CD job from fastlane or github actions.
 
-### Configure Android CICD Details:
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+# Configure Android CICD Details:
+
 On this step we should configure any extra details about firebase app distribution configuration and Google playStore config, keystore.
- Firebase App Distribution (Configuration Steps):
+### Firebase App Distribution (Configuration Steps):
  
 Step4.1: Open Firebase Console page (Visit the Firebase website)
+
 Step4.2: Create a new firebase project (Select Android app Icon and follow the steps)
+
 Step4.3: Add Firebase to your Android app ( set your android package name).
+
 Step4.4: Follow the instructions to add google-services.json  into your android project.
+
 Step4.5: Add the Firebase SDK into our project file called: “build.gradle” 
+
 Once installed, open the General Settings page for the project. Scroll down to the Your apps section 
 and get the AppID to be saved into your github action secrets(explained later).
+
 Step4.6: Add testing group and add testers emails
 
 And we should be all set on firebase.
+
 More details on this great android fastlane tutorial:
 
 https://www.raywenderlich.com/10187451-fastlane-tutorial-for-android-getting-started#toc-anchor-013
 
-Creating PlayStore Credentials (Configuration Steps):
+### Creating PlayStore Credentials (Configuration Steps):
+
 Step4.7: Go to  Google Play Console (We assume that you already create a google developer account.
+
 Step4.8: Click Settings and then click API access
+
 Step4.9: Click the CREATE SERVICE ACCOUNT 
+
 Step4.10 Provide a custom Service account name 
-Step4.11 Choose role as Service Account User
+
+Step4.11 Choose role as Service Account Use
+
 Step4.12 Download the json config file.
+
 Step4.13 Click the Grant Access  button on your new service created
+
 Step4.14 Choose Release Manager role
+
 Step4.15 Click ADD USER button to complete the steps and you are all set!
 
 More details on this great android fastlane tutorial:
@@ -112,16 +132,22 @@ More details on this great android fastlane tutorial:
 https://www.raywenderlich.com/10187451-fastlane-tutorial-for-android-getting-started#toc-anchor-018
 
 
-### Configure IOS CICD Details:
+## Configure IOS CICD Details:
 
 On this part we should configure our AppleStore and AppleConnect section to upload our IOS build directly to testflight. Also authenticating apple developer account and github account to use match signing process.
 
 Step5.1>  Setup Match locally ( https://docs.fastlane.tools/actions/match/)
+
 Step5.2> Create a new, shared Apple developer account (this will be used by our CICD)
+
 Step5.3> Create a Private Github Repository (To be used via match to save our provision Profiles and Apple IOS certificates).
+
 Step5.4> Then run fastlane match development in your local machine and follow the steps.
+
 Then do the same for the other methods(such as: ad-hoc and appstore).
+
 (This fastlane match process should automatically set up all certificates, profiles and push to the remote repository).
+
 At the end of all these steps our github actions will be able to run the fastlane to push the sign and push the IOS build from a virtual machine.
 
 
