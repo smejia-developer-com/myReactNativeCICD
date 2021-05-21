@@ -81,17 +81,23 @@ AND FINALLY WE SHOULD CONFIGURE, GENERATE OUR KEYSTORE AND APPLE APP INFO Before
 ### Configure Android CICD Details:
 On this step we should configure any extra details about firebase app distribution configuration and Google playStore config, keystore.
  Firebase App Distribution (Configuration Steps):
+ 
 Step4.1: Open Firebase Console page (Visit the Firebase website)
 Step4.2: Create a new firebase project (Select Android app Icon and follow the steps)
-Step4.3: Add Firebase to your Android app ( set your android package name)
-Step4.4: Follow the instructions to add google-services.json  into your android project
-Step4.5: Add the Firebase SDK into our project file called: “build.gradle” Once installed, open the General Settings page for the project. Scroll down to the Your apps section and get the AppID to be saved into your github action secrets(explained later).
-Step4.6: Add testing group and add testers emails 
+Step4.3: Add Firebase to your Android app ( set your android package name).
+Step4.4: Follow the instructions to add google-services.json  into your android project.
+Step4.5: Add the Firebase SDK into our project file called: “build.gradle” 
+Once installed, open the General Settings page for the project. Scroll down to the Your apps section 
+and get the AppID to be saved into your github action secrets(explained later).
+Step4.6: Add testing group and add testers emails
+
 And we should be all set on firebase.
-More details on this great android fastlane tutorial: 
+More details on this great android fastlane tutorial:
+
 https://www.raywenderlich.com/10187451-fastlane-tutorial-for-android-getting-started#toc-anchor-013
+
 Creating PlayStore Credentials (Configuration Steps):
-Step4.7: Go to  Google Play Console (We assume that you already create a google developer account. 
+Step4.7: Go to  Google Play Console (We assume that you already create a google developer account.
 Step4.8: Click Settings and then click API access
 Step4.9: Click the CREATE SERVICE ACCOUNT 
 Step4.10 Provide a custom Service account name 
@@ -100,7 +106,9 @@ Step4.12 Download the json config file.
 Step4.13 Click the Grant Access  button on your new service created
 Step4.14 Choose Release Manager role
 Step4.15 Click ADD USER button to complete the steps and you are all set!
+
 More details on this great android fastlane tutorial:
+
 https://www.raywenderlich.com/10187451-fastlane-tutorial-for-android-getting-started#toc-anchor-018
 
 
@@ -120,8 +128,8 @@ At the end of all these steps our github actions will be able to run the fastlan
 For more details about these config I suggest using the great IOS fastlane tutorials to configure our IOS CICD options about Apple store, itunes connect, sign and so on:
 https://www.gitstart.com/post/automatic-deployment-of-react-native-ios-apps-with-fastlane-and-github-actions
 https://www.youtube.com/watch?v=Edr88s5YlH4
-
 https://medium.com/@danielvivek2006/setup-fastlane-match-for-ios-6260758a9a4e
+
 
 
 
